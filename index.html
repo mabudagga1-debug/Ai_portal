@@ -1633,6 +1633,9 @@ let currentRenderCode = null;
 let currentCourse = null;
 let mediaCountCache = {};        // { code: count } لعرض الرقم بجانب التبويب بدون انتظار
 let mediaViewState = { query:'', type:'all', sort:'date_desc', folder:null }; // حالة البحث/الفلترة/الترتيب/المجلد المفتوح لخانة الوسائط
+let mediaCache = {};             // { code: [items] } كاش بالذاكرة لتفادي إعادة القراءة كل مرة
+let folderMetaCache = {};        // { code: { folderName: {note, tags} } } تفاصيل ووسوم المجلدات نفسها
+let selectedMediaIds = new Set(); // العناصر المحددة حالياً (لكل مساق نمسحها لما نبدل مساق/مجلد)
 
 // بطاقة مصدر واحد — بستايل "Lab" (تسمية بولد يمين، وأيقونات فتح/حذف يسار)
 // أو بطاقة مجمّعة (قائمة منسدلة) لو كانت القيمة عبارة عن مجموعة روابط (زي الفصول)
@@ -1885,10 +1888,9 @@ initRemoteSync();
 // ============= MEDIA VAULT (لكل مساق) =============
 // تخزين مركزي عبر Supabase — كل زوار الموقع بيشوفوا نفس الوسائط لأي مساق
 // mediaCountCache معرّف فوق قرب currentCourse
-let mediaCache = {};             // { code: [items] } كاش بالذاكرة لتفادي إعادة القراءة كل مرة
-let folderMetaCache = {};        // { code: { folderName: {note, tags} } } تفاصيل ووسوم المجلدات نفسها
+// mediaCache و folderMetaCache معرّفين فوق قرب currentCourse
 // mediaViewState معرّف فوق قرب currentCourse
-let selectedMediaIds = new Set(); // العناصر المحددة حالياً (لكل مساق نمسحها لما نبدل مساق/مجلد)
+// selectedMediaIds معرّف فوق قرب currentCourse
 
 async function restoreMediaSnapshot(m){
   if(m.kind === 'delete'){
