@@ -105,6 +105,13 @@
     border:1px solid var(--line); padding:6px 10px; border-radius:20px; white-space:nowrap;
   }
   .stat-chip b{color:var(--amber);}
+  .req-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:9px; flex:0 0 auto;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    font-size:14px; text-decoration:none; transition:border-color .2s, color .2s, background .2s, transform .2s var(--ease);
+  }
+  .req-btn:hover{border-color:var(--violet); color:var(--violet); background:rgba(139,127,255,.08); transform:translateY(-1px);}
 
   /* ===== HERO ===== */
   .hero{max-width:1180px; margin:0 auto; padding:88px 24px 28px;}
@@ -739,6 +746,7 @@
   }
 </style>
 <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/bold/style.css">
 </head>
 <body>
 <div class="bg-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -755,6 +763,9 @@
       <input id="searchInput" type="text" name="course-search" autocomplete="off" spellcheck="false" placeholder="ابحث باسم المساق أو الرمز…">
     </div>
     <div class="stat-chip"><b>136</b> ساعة معتمدة</div>
+    <a href="requirements.html" class="req-btn" title="متطلبات الجامعة الإسلامية" aria-label="متطلبات الجامعة الإسلامية">
+      <i class="ph-bold ph-books"></i>
+    </a>
     <button id="adminBtn" class="admin-btn">
       <span class="admin-btn-icon" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
