@@ -768,9 +768,18 @@
     </div>
     <div class="stat-chip"><b>136</b> ساعة معتمدة</div>
     <a href="requirements.html" class="req-btn" title="متطلبات الجامعة الإسلامية" aria-label="متطلبات الجامعة الإسلامية">
-      <i class="ph-bold ph-books"></i>
+      <span aria-hidden="true" style="margin-inline-end:4px;">📚</span>
       <span>المتطلبات</span>
     </a>
+    <a href="contribute.html" class="req-btn" title="شارك ملف" aria-label="شارك ملف" style="border-color:var(--amber-dim); color:var(--amber);">
+      <span aria-hidden="true" style="margin-inline-end:4px;">⬆️</span>
+      <span>شارك ملف</span>
+    </a>
+    <button id="reviewBtn" class="admin-btn admin-only" style="position:relative;" title="مراجعة مساهمات الطلبة">
+      <span class="admin-btn-icon" aria-hidden="true"><i class="ph-bold ph-tray"></i></span>
+      <span>مراجعة المساهمات</span>
+      <span id="reviewBadge" style="display:none; position:absolute; top:-6px; left:-6px; background:var(--danger); color:#fff; font-size:10px; font-family:'JetBrains Mono'; min-width:17px; height:17px; border-radius:20px; align-items:center; justify-content:center; padding:0 4px;">0</span>
+    </button>
     <button id="adminBtn" class="admin-btn">
       <span class="admin-btn-icon" aria-hidden="true">
         <i class="ph-bold ph-shield-check"></i>
@@ -793,6 +802,16 @@
     <div class="admin-modal-title">سجل النسخ المحفوظة</div>
     <div class="admin-modal-sub">كل تعديل بيتحفظ تلقائي كنسخة على جهازك، تقدر ترجع لأي نسخة سابقة لو صار خطأ.</div>
     <div id="historyList" style="max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+</div>
+
+<!-- ===== Review Contributions Modal ===== -->
+<div class="admin-modal-overlay" id="reviewModalOverlay">
+  <div class="admin-modal" id="reviewModal" role="dialog" aria-modal="true" style="max-width:640px;">
+    <button class="admin-modal-close" id="reviewModalClose" title="إغلاق" aria-label="إغلاق">✕</button>
+    <div class="admin-modal-title">مراجعة مساهمات الطلبة</div>
+    <div class="admin-modal-sub">وافق أو ارفض الملفات اللي بعتها الطلبة قبل ما تظهر بصفحات المساقات.</div>
+    <div id="reviewList" style="max-height:440px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; text-align:right;"></div>
   </div>
 </div>
 
@@ -918,7 +937,7 @@ const RESOURCES = {
   "التعلمالعميق": {"Lectures":"https://computer-engineering-iug.vercel.app/DL_lec.html","Slides":"https://drive.google.com/drive/folders/1yJ-anXjW6LhskjbN7QkjKBOvvhiNbKaf","Chapters":"https://drive.google.com/drive/folders/1yJ-anXjW6LhskjbN7QkjKBOvvhiNbKaf","Book & Solutions":"https://drive.google.com/drive/folders/1R58NOG1ePh-CTEgJjBZ5DNpJVg_adwU7","Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/1DVh8vqgd8NJGt_1D1D1f5xKpmzy9P1P4","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/1-Ar7678c7LJpPFLOjLi-SGl5Jce8H8gF"},
   "لغة تجميع": {"Slides":"https://computer-engineering-iug.vercel.app/Assembly_Language_slides.html","Lectures":"https://computer-engineering-iug.vercel.app/Assembly_Language_lec.html","Chapters":"https://computer-engineering-iug.vercel.app/Assembly_Language_chapters.html","Book & Solutions":"https://drive.google.com/drive/folders/1TCoxACAHT60y7E1njfhzcOajBQFMdTeL","Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/1TdSVPABut_aa3aSzZwm54ThzF7wBsqU1","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/1Th2s-yEbdEBmDgc2tpgrKWlz3atu5yr-"},
   "(ساعة250)تدريب عملي": {"مصادر":"https://computer-engineering-iug.vercel.app/%D8%AA%D8%AF%D8%B1%D9%8A%D8%A8%20%D8%B9%D9%85%D9%84%D9%8A(250)%D8%B3%D8%A7%D8%B9%D8%A9.html","تسجيلات":"https://drive.google.com/drive/folders/19dWhAXXJnx0FyGVvjHnWgBfrzYG7Q9-1"},
-  "دوائر كهربائية (1)": {"Slides":"https://computer-engineering-iug.vercel.app/Electric_Circuits_1_slides.html","Lectures":"https://computer-engineering-iug.vercel.app/Electric_Circuits_1_lec.html","Chapters":"https://computer-engineering-iug.vercel.app/Electric_Circuits_1_chapters.html","حلول الكتاب":"https://drive.google.com/drive/folders/152ds4OkK0QMPu7fIaweshHvGH0jfujrR","Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/15Dh0YCXQdoHf2Wk4Y7FEqCWGc9rf1Woi","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/15Kdhi5ezaZsvVneZ_4vfR7BGMx9Y-Zdd"},
+  "دوائر كهربائية (1)": {"Slides":{"CH(1)":"https://drive.google.com/drive/folders/14iY_Yc5lacPm4qcqKUQlPoaO_WyvSxG6?usp=drive_link","CH(2)":"https://drive.google.com/drive/folders/14qQ3yycjDAxZd6WqdB9VsbYm0Jp-GY_w?usp=drive_link","CH(3)":"https://drive.google.com/drive/folders/14uMOG54CQIFu89di0Ocxh6PYa__GLAIg?usp=drive_link","CH(4)":"https://drive.google.com/drive/folders/14vZBkhi1rEwipcnXDFZLGSEtBngDI2fk?usp=drive_link","CH(6)":"https://drive.google.com/drive/folders/14z-eX40RQxIWUZUcw8fpPGNmWdin_qyl?usp=drive_link","CH(7)":"https://drive.google.com/drive/folders/14zcyilmOvqyVuhgXaUQb4OtfOLEtmUGb?usp=drive_link","CH(8)":"https://drive.google.com/drive/folders/152zcDdwdYWR2GLAZpjGgNbN0y7Cm4kyC?usp=drive_link","CH(9)":"https://drive.google.com/drive/folders/154QlCwe50AuesLcSaLWlkJhxdB3VUOxE?usp=drive_link"},"Book & Solutions":"https://drive.google.com/drive/folders/152ds4OkK0QMPu7fIaweshHvGH0jfujrR","Lectures":{"د. ماهر صبرة":"https://www.youtube.com/playlist?list=PL9fwy3NUQKwanLo2tOrusU5xd98mQfH0W","د هالة الخزندار":"https://youtube.com/playlist?list=PL9fwy3NUQKwZ5kRV2VK4xpKkGIxnGvQns&feature=shared","Dr . Abderhman (مصر)":"https://youtube.com/playlist?list=PLUSE6w0Kh7fKLEM_b7rEaUUXOS0RzDsyn&si=9bT_NbU8SV8Yescm","د اسعد ابو جاسر":"https://youtube.com/@dr.abu-jasserelectriccircu2438?feature=shared","د اكرم المحروق (الاردن)":"https://youtube.com/playlist?list=PLKaHePm6MsICKiilzaqDQ7ggeDwWy9PVt&si=b5__mlOnQa8PsCaW","د عماد العداسي (الاردن)":"https://youtube.com/playlist?list=PLwI1rDi6553qoeGhymRHVzLQpU9lnaZBE&feature=shared"},"Chapters":{"CH(1)":"https://drive.google.com/file/d/1EIbvwUUyar3-2mjAt8bXXRa-y-9zw7uW/view?usp=drive_link","CH(2)":"https://drive.google.com/file/d/1E4NlyW_iD5OBBcJWt8NZk_UllgMDDSzP/view?usp=drive_link","CH(3)":"https://drive.google.com/file/d/1EB8C58axf1S2l40JQjsr1mV_1BQD6TFr/view?usp=drive_link","CH(4)":"https://drive.google.com/file/d/1E20n9pKUlrxIaybn6Q2RPMhdUr1mrvas/view?usp=drive_link","CH(6)":"https://drive.google.com/file/d/1EE2eCeAIxVHaajQfAlK6KaIwYa6u08nj/view?usp=drive_link","CH(7)":"https://drive.google.com/file/d/1ELHYvR38S2FgyYQEHQyeE3K7EvI1yhn6/view?usp=drive_link","CH(8)":"https://drive.google.com/file/d/1E7YVtUxp1T-mJAFG2sFGI9TffE_luboa/view?usp=drive_link","CH(9)":"https://drive.google.com/file/d/1DyJ2Rj7l1uZCEkl3Aypf6KmV0DuC2tG1/view?usp=drive_link","All Chapters":"https://drive.google.com/file/d/1EMtoqnpGsLnGohPQe5Kbbp7tDARFRcXN/view?usp=drive_link"},"Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/15Dh0YCXQdoHf2Wk4Y7FEqCWGc9rf1Woi","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/15Kdhi5ezaZsvVneZ_4vfR7BGMx9Y-Zdd"},
   "مختبر دوائر كهربائية (1)": {"Lab":"https://computer-engineering-iug.vercel.app/Electric%20Circuits%20Lab%201_lec.html","تسجيلات":"https://www.youtube.com/watch?v=_ZRJbBljj9A"},
   "تراكيب بيانات وخوارزميات": {"Slides":"https://computer-engineering-iug.vercel.app/Data_structures_and_algorithms_slides.html","Lectures":"https://computer-engineering-iug.vercel.app/Data_structures_and_algorithms_lec.html","Chapters":"https://computer-engineering-iug.vercel.app/Data_structures_and_algorithms_chapters.html","Book & Solutions":"https://drive.google.com/drive/folders/1eD1rzo-buF2U6CjCZ2jK9WoU2Ds9HZ3R","Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/1eeeyvfVNVF-uBLu1orj278PydFbkwr3O","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/1eewtgvRjA7mZqLadYzzGPReV8WDRMkNi"},
   "لغة إنجليزية تقنية": {"Slides":"https://computer-engineering-iug.vercel.app/Technical_English_slides.html","Lectures":"https://computer-engineering-iug.vercel.app/Technical_English_lec.html","Chapters":"https://computer-engineering-iug.vercel.app/Technical_English_chapters.html","Book & Solutions":"https://drive.google.com/drive/folders/1YtusCfU9RIrxGpHQc8PTiW1AUYsxzUN-","Discussion & Problems & Problems solution":"https://drive.google.com/drive/folders/18wcuqSGbOCWVMTDSBZnrHY_ty_FNECCT","Quiz & Exams & Homework":"https://drive.google.com/drive/folders/1EpbVMEf4JgRvjoHcgz2833jcjkomeJMn"},
@@ -1426,9 +1445,108 @@ function applyAdminState(){
   document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('adminBtnLabel').textContent = isAdmin ? 'الأدمن مفعّل' : 'دخول الأدمن';
   document.getElementById('adminBtn').title = isAdmin ? 'وضع الإشراف مفعّل' : 'دخول لوحة إشراف الأدمن';
+  if(isAdmin) refreshPendingBadge();
 }
 applyAdminState();
 renderResumeBanner();
+
+// ============= STUDENT CONTRIBUTIONS REVIEW =============
+async function refreshPendingBadge(){
+  if(!isAdmin) return;
+  try{
+    const { count, error } = await sb.from('pending_contributions')
+      .select('id', { count:'exact', head:true }).eq('status','pending');
+    if(error) throw error;
+    const badge = document.getElementById('reviewBadge');
+    if(!badge) return;
+    if(count > 0){ badge.style.display='flex'; badge.textContent = count > 99 ? '99+' : count; }
+    else{ badge.style.display='none'; }
+  }catch(e){ console.error('تعذر تحميل عدد المساهمات المعلّقة:', e.message); }
+}
+
+function contribTypeIcon(t){ return {image:'🖼️', video:'🎬', audio:'🎵', link:'🔗', document:'📄'}[t] || '📎'; }
+
+async function loadPendingContributions(){
+  const { data, error } = await sb.from('pending_contributions')
+    .select('*').eq('status','pending').order('created_at', { ascending:true });
+  if(error){ console.error('تعذر تحميل المساهمات:', error.message); return []; }
+  return data || [];
+}
+
+function contribCardHTML(item){
+  const created = new Date(item.created_at).toLocaleString('ar-EG', { dateStyle:'medium', timeStyle:'short' });
+  return `
+    <div class="contrib-card" data-id="${item.id}" style="border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--panel-2);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700; font-size:14px;">${contribTypeIcon(item.type)} ${item.title}</div>
+          <div style="font-size:11.5px; color:var(--muted); margin-top:3px;">
+            <span class="mono">${item.course_code}</span> — ${item.course_name || ''}
+            ${item.folder ? ' · تصنيف: ' + item.folder : ''}
+          </div>
+        </div>
+        <a href="${item.url}" target="_blank" rel="noopener" style="flex:0 0 auto; font-size:12px; color:var(--violet); border:1px solid var(--violet-dim); padding:4px 10px; border-radius:7px; text-decoration:none;">معاينة ↗</a>
+      </div>
+      ${item.note ? `<div style="font-size:12.5px; color:var(--text); margin-bottom:6px;">📝 ${item.note}</div>` : ''}
+      <div style="font-size:11px; color:var(--muted); font-family:'JetBrains Mono'; margin-bottom:10px;">
+        ${item.submitter_name ? 'من: ' + item.submitter_name + ' · ' : ''}${created}
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="contrib-approve" data-id="${item.id}" style="flex:1; padding:8px; border-radius:8px; border:none; background:var(--mint); color:#0c1117; font-weight:700; cursor:pointer; font-size:12.5px;">✓ موافقة</button>
+        <button type="button" class="contrib-reject" data-id="${item.id}" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--danger); background:transparent; color:var(--danger); font-weight:700; cursor:pointer; font-size:12.5px;">✕ رفض</button>
+      </div>
+    </div>`;
+}
+
+async function renderReviewList(){
+  const wrap = document.getElementById('reviewList');
+  const items = await loadPendingContributions();
+  if(items.length === 0){
+    wrap.innerHTML = '<div style="color:var(--muted); font-size:13px; padding:20px 0; text-align:center;">ما في مساهمات بانتظار المراجعة حاليًا 🎉</div>';
+    return;
+  }
+  wrap.innerHTML = items.map(contribCardHTML).join('');
+}
+
+async function approveContribution(id){
+  const { data: item, error: fetchErr } = await sb.from('pending_contributions').select('*').eq('id', id).single();
+  if(fetchErr || !item){ alert('تعذر جلب المساهمة'); return; }
+  const { error: insErr } = await sb.from('course_media').insert({
+    course_code: item.course_code, type: item.type, title: item.title, url: item.url,
+    mime_type: item.mime_type, file_size: item.file_size, folder: item.folder,
+    tags: [], note: item.note || ''
+  });
+  if(insErr){ alert('تعذر نشر الملف: ' + insErr.message); return; }
+  await sb.from('pending_contributions').update({ status:'approved', reviewed_at: new Date().toISOString() }).eq('id', id);
+  if(mediaCache && mediaCache[item.course_code]) delete mediaCache[item.course_code]; // يفرض إعادة تحميل الوسائط لهاد المساق
+  renderReviewList();
+  refreshPendingBadge();
+}
+
+async function rejectContribution(id){
+  if(!confirm('ترفض هالمساهمة؟ رح تنحذف نهائيًا.')) return;
+  await sb.from('pending_contributions').update({ status:'rejected', reviewed_at: new Date().toISOString() }).eq('id', id);
+  renderReviewList();
+  refreshPendingBadge();
+}
+
+document.getElementById('reviewList').addEventListener('click', (e)=>{
+  const appr = e.target.closest('.contrib-approve');
+  if(appr){ appr.disabled = true; appr.textContent = '...'; approveContribution(appr.dataset.id); return; }
+  const rej = e.target.closest('.contrib-reject');
+  if(rej){ rej.disabled = true; rej.textContent = '...'; rejectContribution(rej.dataset.id); return; }
+});
+
+const reviewBtn = document.getElementById('reviewBtn');
+const reviewModalOverlay = document.getElementById('reviewModalOverlay');
+if(reviewBtn){
+  reviewBtn.addEventListener('click', ()=>{
+    reviewModalOverlay.classList.add('open');
+    renderReviewList();
+  });
+}
+document.getElementById('reviewModalClose').addEventListener('click', ()=>reviewModalOverlay.classList.remove('open'));
+reviewModalOverlay.addEventListener('click', (e)=>{ if(e.target === reviewModalOverlay) reviewModalOverlay.classList.remove('open'); });
 
 // ============= ADMIN LOGIN MODAL =============
 const LS_ADMIN_ATTEMPTS = 'iugAdminAttempts';
