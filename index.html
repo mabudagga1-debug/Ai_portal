@@ -106,11 +106,13 @@
   }
   .stat-chip b{color:var(--amber);}
   .req-btn{
-    display:flex; align-items:center; justify-content:center;
-    width:34px; height:34px; border-radius:9px; flex:0 0 auto;
+    display:flex; align-items:center; gap:7px; flex:0 0 auto;
+    padding:8px 14px; border-radius:9px;
     border:1px solid var(--line); background:var(--panel); color:var(--muted);
-    font-size:14px; text-decoration:none; transition:border-color .2s, color .2s, background .2s, transform .2s var(--ease);
+    font-family:'IBM Plex Sans Arabic'; font-size:13px; font-weight:600; white-space:nowrap;
+    text-decoration:none; transition:border-color .2s, color .2s, background .2s, transform .2s var(--ease);
   }
+  .req-btn i{font-size:15px;}
   .req-btn:hover{border-color:var(--violet); color:var(--violet); background:rgba(139,127,255,.08); transform:translateY(-1px);}
 
   /* ===== HERO ===== */
@@ -737,6 +739,8 @@
     .rv-topbar{padding:11px 14px; gap:10px;}
     .rv-title{font-size:14px;}
     .rv-ext span{display:none;}
+    .req-btn span{display:none;}
+    .req-btn{padding:8px 10px;}
   }
 
   @media (max-width:640px){
@@ -765,14 +769,11 @@
     <div class="stat-chip"><b>136</b> ساعة معتمدة</div>
     <a href="requirements.html" class="req-btn" title="متطلبات الجامعة الإسلامية" aria-label="متطلبات الجامعة الإسلامية">
       <i class="ph-bold ph-books"></i>
+      <span>المتطلبات</span>
     </a>
     <button id="adminBtn" class="admin-btn">
       <span class="admin-btn-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
-          <path d="M191.5 16C130.6 16 81.2 65.4 81.2 126.2s49.4 110.2 110.2 110.2 110.2-49.4 110.2-110.2S252.3 16 191.5 16z"/>
-          <path d="M226 296.3H157c-72.8 0-131.9 59-131.9 131.9v40.9c0 8 6.5 14.5 14.5 14.5h226c-13.5-22.8-21.3-49.4-21.3-77.8 0-40.8 16-77.9 42-105.5-13.6-2.6-27.5-4-42-4z"/>
-          <path d="M498.6 331.3l-19.6-11.3c1-6.5 1.6-13.1 1.6-19.9s-.6-13.4-1.6-19.9l19.6-11.3c8.5-4.9 12.6-15.1 9.4-24.4-5.9-17.3-15.1-33-27-46.5-6.5-7.4-17.3-9.3-25.9-4.4l-19.6 11.3c-10.4-8.4-22.1-15.1-34.8-19.7v-22.6c0-9.8-6.8-18.3-16.3-20.3-17.9-3.8-36.2-3.8-54.1 0-9.5 2-16.3 10.5-16.3 20.3v22.6c-12.7 4.6-24.4 11.3-34.8 19.7l-19.6-11.3c-8.6-4.9-19.4-3-25.9 4.4-11.9 13.5-21.1 29.2-27 46.5-3.2 9.3.9 19.5 9.4 24.4l19.6 11.3c-1 6.5-1.6 13.1-1.6 19.9s.6 13.4 1.6 19.9l-19.6 11.3c-8.5 4.9-12.6 15.1-9.4 24.4 5.9 17.3 15.1 33 27 46.5 6.5 7.4 17.3 9.3 25.9 4.4l19.6-11.3c10.4 8.4 22.1 15.1 34.8 19.7v22.6c0 9.8 6.8 18.3 16.3 20.3 17.9 3.8 36.2 3.8 54.1 0 9.5-2 16.3-10.5 16.3-20.3v-22.6c12.7-4.6 24.4-11.3 34.8-19.7l19.6 11.3c8.6 4.9 19.4 3 25.9-4.4 11.9-13.5 21.1-29.2 27-46.5 3.2-9.3-.9-19.5-9.4-24.4zM384 352c-28.7 0-52-23.3-52-52s23.3-52 52-52 52 23.3 52 52-23.3 52-52 52z"/>
-        </svg>
+        <i class="ph-bold ph-shield-check"></i>
       </span>
       <span id="adminBtnLabel">دخول الأدمن</span>
     </button>
@@ -1246,6 +1247,22 @@ function getCombinedResources(c){
 }
 
 function courseCard(c){
+  if(c.type === 'جامعة'){
+    const isGenericElective = c.name.includes('اختياري');
+    const cleanName = c.name.replace(/\(([0-9]+)\)/,'$1').replace(/\(.*?\)/g,'').trim();
+    const href = isGenericElective ? 'requirements.html' : `requirements.html?q=${encodeURIComponent(cleanName)}`;
+    return `
+    <div class="course" data-type="${c.type}" data-search="${(c.name+' '+c.code).toLowerCase()}" data-code="${c.code}" data-name="${c.name}">
+      <div class="course-top">
+        <span class="course-code mono">${c.code}</span>
+        <span class="course-type ${c.type}">${c.type}</span>
+      </div>
+      <div class="course-name">${c.name}</div>
+      <a class="open-course-btn" href="${href}">
+        فتح صفحة المتطلبات
+      </a>
+    </div>`;
+  }
   return `
     <div class="course" data-type="${c.type}" data-search="${(c.name+' '+c.code).toLowerCase()}" data-code="${c.code}" data-name="${c.name}">
       <div class="course-top">
