@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c1117">
+<title>شارك ملف — مسار AI | IUG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1117; --panel:#131a22; --panel-2:#182029; --line:#232c37;
+    --text:#e9edf2; --muted:#8a97a6; --amber:#e8a33d; --amber-dim:#5b4726;
+    --violet:#8b7fff; --violet-dim:#332f5c; --mint:#4fd1a5; --danger:#e2645f;
+    --ease:cubic-bezier(.22,.9,.32,1);
+    --shadow-md:0 10px 24px -12px rgba(0,0,0,.55);
+    --shadow-amber:0 14px 32px -14px rgba(232,163,61,.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth; color-scheme:dark;}
+  :focus-visible{outline:2px solid var(--amber); outline-offset:2px; border-radius:4px;}
+  body{
+    margin:0; min-height:100vh;
+    background:
+      radial-gradient(1100px 600px at 85% -10%, rgba(139,127,255,.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, rgba(232,163,61,.08), transparent 55%),
+      var(--bg);
+    color:var(--text); font-family:'IBM Plex Sans Arabic', sans-serif; line-height:1.6;
+  }
+  .mono{font-family:'JetBrains Mono', monospace; letter-spacing:.02em; direction:ltr; display:inline-block;}
+  a{color:inherit;}
+
+  .topbar{position:sticky; top:0; z-index:50; background:rgba(12,17,23,.86); backdrop-filter:blur(10px); border-bottom:1px solid var(--line);}
+  .topbar-inner{max-width:720px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; text-decoration:none;}
+  .brand-mark{width:34px; height:34px; border-radius:8px; background:linear-gradient(135deg, var(--amber), var(--violet)); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:700; color:#0c1117; font-size:14px;}
+  .brand-text{font-family:'Space Grotesk'; font-size:17px;}
+  .brand-text span{color:var(--muted); font-weight:500; font-size:13px; display:block; font-family:'IBM Plex Sans Arabic';}
+  .back-link{font-size:13px; color:var(--muted); text-decoration:none; display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; transition:all .15s;}
+  .back-link:hover{color:var(--text); border-color:var(--amber-dim);}
+
+  .wrap{max-width:720px; margin:0 auto; padding:32px 24px 80px;}
+  .hero{margin-bottom:28px;}
+  .hero h1{font-family:'Space Grotesk'; font-size:26px; margin:0 0 8px;}
+  .hero p{color:var(--muted); font-size:14.5px; margin:0;}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:24px; box-shadow:var(--shadow-md);}
+  .field{margin-bottom:20px;}
+  .field label{display:block; font-size:13.5px; font-weight:600; margin-bottom:8px; color:var(--text);}
+  .field .hint{color:var(--muted); font-size:12px; margin-top:6px; display:block;}
+  .field input[type=text], .field input[type=url], .field textarea, .field select{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:11px 14px; border-radius:10px; font-family:inherit; font-size:14px; outline:none;
+    transition:border-color .15s; appearance:none;
+  }
+  .field select{
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a97a6' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:left 14px center; padding-left:36px;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{border-color:var(--amber);}
+  .field textarea{resize:vertical; min-height:80px;}
+
+  .kind-tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .kind-tab{flex:1; min-width:110px; text-align:center; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel-2); cursor:pointer; font-size:13.5px; font-weight:600; color:var(--muted); transition:all .15s;}
+  .kind-tab.active{border-color:var(--amber-dim); color:var(--amber); background:rgba(232,163,61,.08);}
+  .kind-tab:hover:not(.active){border-color:#39434f; color:var(--text);}
+
+  .drop-zone{
+    border:1.5px dashed var(--line); border-radius:12px; padding:28px 16px; text-align:center;
+    cursor:pointer; transition:all .15s; background:var(--panel-2);
+  }
+  .drop-zone:hover, .drop-zone.drag{border-color:var(--amber); background:rgba(232,163,61,.06);}
+  .drop-zone .dz-icon{font-size:26px; margin-bottom:8px;}
+  .drop-zone .dz-title{font-size:14px; font-weight:600;}
+  .drop-zone .dz-sub{font-size:12px; color:var(--muted); margin-top:4px;}
+  .file-picked{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:13.5px;}
+  .file-picked .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-picked button{background:none; border:none; color:var(--danger); cursor:pointer; font-size:13px; font-family:inherit; font-weight:600;}
+
+  .progress-wrap{margin-top:10px; height:6px; border-radius:99px; background:var(--panel-2); overflow:hidden; display:none;}
+  .progress-bar{height:100%; width:0%; background:linear-gradient(90deg, var(--amber), var(--violet)); transition:width .2s;}
+
+  .submit-btn{
+    width:100%; padding:13px; border-radius:10px; border:none; cursor:pointer;
+    background:linear-gradient(135deg, var(--amber), #f2b74e); color:#1a1206; font-weight:700; font-size:15px;
+    font-family:inherit; box-shadow:var(--shadow-amber); transition:transform .12s, opacity .15s;
+  }
+  .submit-btn:hover{transform:translateY(-1px);}
+  .submit-btn:disabled{opacity:.55; cursor:not-allowed; transform:none;}
+
+  .status-msg{margin-top:16px; padding:12px 14px; border-radius:10px; font-size:13.5px; display:none; align-items:flex-start; gap:8px;}
+  .status-msg.show{display:flex;}
+  .status-msg.ok{background:rgba(79,209,165,.1); border:1px solid rgba(79,209,165,.3); color:var(--mint);}
+  .status-msg.err{background:rgba(226,101,95,.1); border:1px solid rgba(226,101,95,.3); color:var(--danger);}
+
+  .success-view{display:none; text-align:center; padding:20px 8px;}
+  .success-view.show{display:block;}
+  .success-view .check{width:56px; height:56px; border-radius:50%; background:rgba(79,209,165,.12); border:1px solid rgba(79,209,165,.35); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:26px; color:var(--mint);}
+  .success-view h2{font-family:'Space Grotesk'; font-size:19px; margin:0 0 8px;}
+  .success-view p{color:var(--muted); font-size:13.5px; margin:0 0 20px;}
+  .success-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+  .success-actions a, .success-actions button{
+    padding:10px 18px; border-radius:9px; font-size:13.5px; font-weight:600; text-decoration:none; cursor:pointer; font-family:inherit; border:1px solid var(--line); background:var(--panel-2); color:var(--text);
+  }
+  .success-actions .primary{background:linear-gradient(135deg, var(--amber), #f2b74e); color:#1a1206; border:none;}
+
+  footer{text-align:center; color:var(--muted); font-size:12px; padding:24px; opacity:.7;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">AI</span>
+      <span class="brand-text">مسار AI<span>IUG</span></span>
+    </a>
+    <a class="back-link" href="index.html">→ رجوع للموقع</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>شارك ملف أو مصدر مع زملائك</h1>
+    <p>اختر المقرر، أضف رابط أو ملف أو ملاحظة، وبتنراجع من الإدارة قبل ما تنشر بشكل عام. رح تشوف اسمك (اختياري) مع المساهمة.</p>
+  </div>
+
+  <div class="card">
+    <form id="contribForm">
+      <div class="field">
+        <label for="courseSelect">المقرر</label>
+        <select id="courseSelect" required></select>
+      </div>
+
+      <div class="kind-tabs" id="kindTabs">
+        <div class="kind-tab active" data-kind="link">🔗 رابط</div>
+        <div class="kind-tab" data-kind="file">📎 ملف</div>
+        <div class="kind-tab" data-kind="note">📝 ملاحظة</div>
+      </div>
+
+      <div class="field">
+        <label for="titleInput">العنوان</label>
+        <input type="text" id="titleInput" placeholder="مثال: ملخص الفصل الثالث" required>
+      </div>
+
+      <div class="field" id="urlField">
+        <label for="urlInput">الرابط</label>
+        <input type="url" id="urlInput" placeholder="https://drive.google.com/...">
+        <span class="hint">جوجل درايف، يوتيوب، أو أي رابط مفيد للمقرر</span>
+      </div>
+
+      <div class="field" id="fileField" style="display:none;">
+        <label>الملف</label>
+        <div class="drop-zone" id="dropZone">
+          <div class="dz-icon">📁</div>
+          <div class="dz-title">اسحب الملف هون أو اضغط للاختيار</div>
+          <div class="dz-sub">الحد الأقصى 25 ميغابايت — لو أكبر، استخدم رابط جوجل درايف بدل الملف</div>
+        </div>
+        <input type="file" id="fileInput" style="display:none;">
+        <div id="filePicked" style="display:none;"></div>
+        <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+      <div class="field" id="noteField" style="display:none;">
+        <label for="noteInput">الملاحظة</label>
+        <textarea id="noteInput" placeholder="اكتب ملاحظتك أو نصيحتك عن المقرر..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="descInput">وصف قصير (اختياري)</label>
+        <textarea id="descInput" placeholder="أي تفاصيل إضافية تساعد زملائك..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="nameInput">اسمك (اختياري)</label>
+        <input type="text" id="nameInput" placeholder="بيظهر مع المساهمة، اتركه فاضي لو بدك مجهول">
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">إرسال للمراجعة</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </form>
+
+    <div class="success-view" id="successView">
+      <div class="check">✓</div>
+      <h2>تم الإرسال بنجاح</h2>
+      <p>وصلت مساهمتك وبتنراجع قريبًا من الإدارة قبل ما تظهر للجميع. شكرًا إلك!</p>
+      <div class="success-actions">
+        <button type="button" class="primary" id="addAnotherBtn">مشاركة ملف تاني</button>
+        <a href="index.html">رجوع للموقع</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>مسار AI — IUG</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============= SUPABASE (نفس إعدادات الموقع الرئيسي) =============
+const SUPABASE_URL = "https://exqttmvhqzrgoiuospxw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4cXR0bXZocXpyZ29pdW9zcHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwMTI0MDcsImV4cCI6MjA5OTU4ODQwN30.x-7G456IyLdYeusegUdOzd-bldeVB3Isb-ThJJEeG0g";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const MEDIA_BUCKET = "course-media";
+const MAX_UPLOAD_MB = 25;
+
+// ============= بيانات المقررات (نفس خطة الموقع الرئيسي) =============
+const PLAN = [
+  { level:1, title:"المستوى الأول", semesters:[
+    { name:"الفصل الأول", courses:[
+      {code:"EELE 1101", name:"مختبر دوائر كهربائية (1)"},
+      {code:"EELE 1301", name:"دوائر كهربائية (1)"},
+      {code:"ENGG 1206", name:"أساسيات الهندسة والبحث العلمي"},
+      {code:"ENGG 1301", name:"أساسيات البرمجة"},
+      {code:"MATHA1301", name:"(تفاضل وتكامل)أ"},
+      {code:"PHYSA1102", name:"(فيزياء عامة عملية)أ"},
+      {code:"PHYSA1301", name:"(فيزياء عامة)أ"},
+      {code:"QURN 1101", name:"قرآن كريم (1)"},
+    ]},
+    { name:"الفصل الثاني", courses:[
+      {code:"ECOM 1101", name:"مختبر تصميم رقمي"},
+      {code:"ECOM 1301", name:"تصميم رقمي"},
+      {code:"ECOM 1401", name:"برمجة حاسوب (1)"},
+      {code:"EELE 1105", name:"انترنت الأشياء والمتحكمات (عملي)"},
+      {code:"EELE 1305", name:"انترنت الأشياء والمتحكمات"},
+      {code:"MATHB1302", name:"(تفاضل تكامل)ب"},
+      {code:"OPTI 1202", name:"متطلب جامعة اختياري (1)"},
+      {code:"QURN 2101", name:"قرآن كريم (2)"},
+    ]},
+  ]},
+  { level:2, title:"المستوى الثاني", semesters:[
+    { name:"الفصل الأول", courses:[
+      {code:"ARAB 1202", name:"نحو وصرف (اللغة العربية)"},
+      {code:"ECOM 2311", name:"رياضيات متقطعة"},
+      {code:"ECOM 2402", name:"برمجة حاسوب (2)"},
+      {code:"ENGG 1209", name:"رسم هندسي بالحاسوب"},
+      {code:"ENGG 1305", name:"لغة إنجليزية تقنية"},
+      {code:"MATH 2341", name:"جبر خطي"},
+      {code:"QURN 3101", name:"قرآن كريم (3)"},
+    ]},
+    { name:"الفصل الثاني", courses:[
+      {code:"ECOM 2302", name:"المثالية لتعلم الآلة"},
+      {code:"ECOM 2406", name:"برمجة بايثون"},
+      {code:"ECOM 2407", name:"تراكيب بيانات وخوارزميات"},
+      {code:"EELE 3107", name:"معالجة الإشارات الرقمية (عملي)"},
+      {code:"EELE 3307", name:"معالجة الإشارات الرقمية"},
+      {code:"MATH 2300", name:"الاحصاء والاحتمالات"},
+    ]},
+  ]},
+  { level:3, title:"المستوى الثالث", semesters:[
+    { name:"الفصل الأول", courses:[
+      {code:"ECOM 3302", name:"صياغة الروبوت"},
+      {code:"ECOM 3303", name:"الذكاء الاصطناعي"},
+      {code:"ECOM 3307", name:"معالجة لغات طبيعية"},
+      {code:"ECOM 3308", name:"استرجاع معلومات"},
+      {code:"ECOM 3421", name:"عمارة حاسبات"},
+      {code:"POLS 3220", name:"دراسات فلسطينية"},
+    ]},
+    { name:"الفصل الثاني", courses:[
+      {code:"ECOM 3002", name:"(ساعة250)تدريب عملي"},
+      {code:"ECOM 3306", name:"لغة تجميع"},
+      {code:"ECOM 3313", name:"تحليل وعرض البيانات"},
+      {code:"ECOM 3405", name:"تعلم الآلة"},
+      {code:"ECOM 3410", name:"التعلمالعميق"},
+      {code:"OPTI 3113", name:"متطلب تخصص اختياري (عملي 1)"},
+      {code:"OPTI 3313", name:"متطلب تخصص اختياري (1)"},
+    ]},
+  ]},
+  { level:4, title:"المستوى الرابع", semesters:[
+    { name:"الفصل الأول", courses:[
+      {code:"AQID 3306", name:"دراسات في العقيدة"},
+      {code:"ECOM 4101", name:"بحث وندوة"},
+      {code:"OPTI 1203", name:"متطلب جامعة اختياري (2)"},
+      {code:"OPTI 4117", name:"متطلب تخصص اختياري (عملي 2)"},
+      {code:"OPTI 4118", name:"متطلب تخصص اختياري (عملي 3)"},
+      {code:"OPTI 4317", name:"متطلب تخصص اختياري (2)"},
+      {code:"OPTI 4318", name:"متطلب تخصص اختياري (3)"},
+      {code:"OPTI 4319", name:"متطلب تخصص اختياري (4)"},
+    ]},
+    { name:"الفصل الثاني", courses:[
+      {code:"ECOM 4302", name:"مشروع تخرج"},
+      {code:"OPTI 3212", name:"متطلب جامعة اختياري (3)"},
+      {code:"OPTI 4125", name:"متطلب تخصص اختياري (عملي 5)"},
+      {code:"OPTI 4213", name:"متطلب جامعة اختياري (4)"},
+      {code:"OPTI 4325", name:"متطلب تخصص اختياري (5)"},
+      {code:"QURN 4102", name:"قرآن كريم (4)"},
+    ]},
+  ]},
+];
+
+// ============= تعبئة قائمة المقررات =============
+const courseSelect = document.getElementById('courseSelect');
+const placeholderOpt = document.createElement('option');
+placeholderOpt.value = ""; placeholderOpt.textContent = "اختر المقرر..."; placeholderOpt.disabled = true; placeholderOpt.selected = true;
+courseSelect.appendChild(placeholderOpt);
+PLAN.forEach(level => {
+  const group = document.createElement('optgroup');
+  group.label = level.title;
+  level.semesters.forEach(sem => {
+    sem.courses.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = `${c.code} — ${c.name}`;
+      opt.dataset.name = c.name;
+      group.appendChild(opt);
+    });
+  });
+  courseSelect.appendChild(group);
+});
+// اختيار تلقائي لو جاي من رابط فيه ?course=CODE
+const params = new URLSearchParams(location.search);
+const preselect = params.get('course');
+if(preselect){
+  const match = [...courseSelect.options].find(o => o.value === preselect);
+  if(match) courseSelect.value = preselect;
+}
+
+// ============= تبديل نوع المساهمة =============
+let currentKind = 'link';
+const kindTabs = document.getElementById('kindTabs');
+const urlField = document.getElementById('urlField');
+const fileField = document.getElementById('fileField');
+const noteField = document.getElementById('noteField');
+kindTabs.addEventListener('click', (e) => {
+  const tab = e.target.closest('.kind-tab');
+  if(!tab) return;
+  currentKind = tab.dataset.kind;
+  [...kindTabs.children].forEach(t => t.classList.toggle('active', t === tab));
+  urlField.style.display = currentKind === 'link' ? '' : 'none';
+  fileField.style.display = currentKind === 'file' ? '' : 'none';
+  noteField.style.display = currentKind === 'note' ? '' : 'none';
+  document.getElementById('urlInput').required = currentKind === 'link';
+  document.getElementById('noteInput').required = currentKind === 'note';
+});
+
+// ============= اختيار الملف (سحب/إفلات أو اختيار) =============
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const filePicked = document.getElementById('filePicked');
+let selectedFile = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if(fileInput.files[0]) setFile(fileInput.files[0]); });
+
+function setFile(file){
+  selectedFile = file;
+  dropZone.style.display = 'none';
+  filePicked.style.display = 'flex';
+  filePicked.classList.add('file-picked');
+  filePicked.innerHTML = `<span class="name">📎 ${file.name} — ${(file.size/1024/1024).toFixed(2)}MB</span><button type="button" id="removeFileBtn">إزالة</button>`;
+  document.getElementById('removeFileBtn').addEventListener('click', () => {
+    selectedFile = null; fileInput.value = '';
+    dropZone.style.display = ''; filePicked.style.display = 'none';
+  });
+}
+
+// ============= رفع الملف عبر XHR مباشرة لتخزين Supabase =============
+function uploadViaXHR(file, path, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `${SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`;
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('authorization', `Bearer ${SUPABASE_ANON_KEY}`);
+    xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY);
+    xhr.setRequestHeader('x-upsert', 'true');
+    xhr.setRequestHeader('cache-control', '3600');
+    xhr.setRequestHeader('content-type', file.type || 'application/octet-stream');
+    xhr.upload.onprogress = (e) => { if(onProgress && e.lengthComputable) onProgress(Math.round((e.loaded/e.total)*100)); };
+    xhr.onload = () => { if(xhr.status >= 200 && xhr.status < 300) resolve(); else reject(new Error(`رفض السيرفر الرفع (${xhr.status})`)); };
+    xhr.onerror = () => reject(new Error('تعذر الاتصال بالسيرفر (Failed to fetch)'));
+    xhr.send(file);
+  });
+}
+function mediaUid(){ return Math.random().toString(36).slice(2, 8); }
+function detectType(mime){
+  if(!mime) return 'document';
+  if(mime.startsWith('image/')) return 'image';
+  if(mime.startsWith('video/')) return 'video';
+  if(mime.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+
+// ============= الإرسال =============
+const form = document.getElementById('contribForm');
+const submitBtn = document.getElementById('submitBtn');
+const statusMsg = document.getElementById('statusMsg');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const successView = document.getElementById('successView');
+
+function showStatus(msg, type){
+  statusMsg.textContent = msg;
+  statusMsg.className = `status-msg show ${type}`;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusMsg.className = 'status-msg';
+
+  const code = courseSelect.value;
+  if(!code){ showStatus('اختر المقرر أولاً.', 'err'); return; }
+  const courseName = courseSelect.selectedOptions[0]?.dataset.name || '';
+  const title = document.getElementById('titleInput').value.trim();
+  if(!title){ showStatus('اكتب عنوان للمساهمة.', 'err'); return; }
+  const desc = document.getElementById('descInput').value.trim();
+  const submitterName = document.getElementById('nameInput').value.trim();
+
+  const row = {
+    course_code: code,
+    course_name: courseName,
+    type: currentKind === 'note' ? 'link' : currentKind,
+    title: title,
+    note: desc,
+    submitter_name: submitterName,
+    status: 'pending',
+    url: '',
+    mime_type: null,
+    file_size: null,
+  };
+
+  submitBtn.disabled = true;
+
+  try{
+    if(currentKind === 'link'){
+      const url = document.getElementById('urlInput').value.trim();
+      if(!url){ throw new Error('أضف رابط صحيح.'); }
+      row.url = url;
+      row.type = 'link';
+    } else if(currentKind === 'note'){
+      const noteText = document.getElementById('noteInput').value.trim();
+      if(!noteText){ throw new Error('اكتب نص الملاحظة.'); }
+      row.url = '';
+      row.note = desc ? `${noteText}\n\n${desc}` : noteText;
+      row.type = 'link';
+    } else if(currentKind === 'file'){
+      if(!selectedFile){ throw new Error('اختر ملف للرفع.'); }
+      const maxBytes = MAX_UPLOAD_MB * 1024 * 1024;
+      if(selectedFile.size > maxBytes){
+        throw new Error(`حجم الملف ${(selectedFile.size/1024/1024).toFixed(1)}MB أكبر من الحد المسموح (${MAX_UPLOAD_MB}MB). استخدم رابط جوجل درايف بدل الملف.`);
+      }
+      submitBtn.textContent = 'جاري الرفع...';
+      progressWrap.style.display = 'block';
+      const path = `_contributions/${code}/${Date.now()}_${mediaUid()}_${selectedFile.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;
+      await uploadViaXHR(selectedFile, path, (pct) => { progressBar.style.width = pct + '%'; });
+      const { data: pub } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+      row.url = pub.publicUrl;
+      row.mime_type = selectedFile.type || null;
+      row.file_size = selectedFile.size;
+      row.type = detectType(selectedFile.type);
+    }
+
+    submitBtn.textContent = 'جاري الإرسال...';
+    const { error } = await sb.from('pending_contributions').insert(row);
+    if(error) throw error;
+
+    form.style.display = 'none';
+    successView.classList.add('show');
+  } catch(err){
+    console.error(err);
+    showStatus(err.message || 'صار خطأ أثناء الإرسال، حاول مرة ثانية.', 'err');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'إرسال للمراجعة';
+    progressWrap.style.display = 'none';
+    progressBar.style.width = '0%';
+  }
+});
+
+document.getElementById('addAnotherBtn').addEventListener('click', () => {
+  form.reset();
+  form.style.display = '';
+  successView.classList.remove('show');
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'إرسال للمراجعة';
+  selectedFile = null;
+  dropZone.style.display = '';
+  filePicked.style.display = 'none';
+  progressWrap.style.display = 'none';
+  progressBar.style.width = '0%';
+  statusMsg.className = 'status-msg';
+  currentKind = 'link';
+  [...kindTabs.children].forEach((t,i) => t.classList.toggle('active', i===0));
+  urlField.style.display = ''; fileField.style.display = 'none'; noteField.style.display = 'none';
+});
+</script>
+</body>
+</html>
