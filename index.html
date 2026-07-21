@@ -963,6 +963,32 @@ const RESOURCES = {
 const LS_KEY = "aiplan_overrides_v1";
 const LS_CATS_CACHE = "aiplan_categories_v1"; // كاش محلي فقط، المصدر الحقيقي هو Supabase
 const LS_ADMIN = "aiplan_admin_v1";
+const LS_ADMIN_PW = "aiplan_admin_pw_v1"; // كلمة سر الجلسة، تستخدم بس لتوقيع طلبات admin-write
+
+// كل كتابة على الجداول الحساسة (course_media/course_media_folders/pending_contributions/site_data)
+// تمر من هون، مش مباشر sb.from()، عشان تتحقق من كلمة السر عالسيرفر كل مرة.
+// ملاحظة: match بتقبل قيمة عادية (=) أو مصفوفة (IN) — بيتعامل معها admin-write تلقائي
+async function adminWrite(table, op, payload, match, upsertOptions){
+  const pw = sessionStorage.getItem(LS_ADMIN_PW);
+  if(!pw){ alert('لازم تسجّل دخول كأدمن من جديد.'); throw new Error('no_admin_session'); }
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-write`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'apikey': SUPABASE_ANON_KEY},
+    body: JSON.stringify({ password: pw, table, op, payload, match, upsertOptions })
+  });
+  const data = await res.json();
+  if(!data.ok){
+    if(data.error === 'unauthorized'){
+      isAdmin = false;
+      sessionStorage.removeItem(LS_ADMIN);
+      sessionStorage.removeItem(LS_ADMIN_PW);
+      applyAdminState();
+      alert('انتهت صلاحية جلسة الأدمن، سجّل دخول من جديد.');
+    }
+    throw new Error(data.error || 'admin_write_failed');
+  }
+  return data.data;
+}
 
 // ---- تخزين مشترك عبر Supabase (جدول site_data): كل التعديلات تنحفظ هون وتظهر لكل زوار الموقع ----
 let overrides = {};       // { "ECOM 1301": {"اسم الرابط": "url", ...}, ... }
@@ -998,7 +1024,7 @@ async function fetchRemoteData(){
 async function pushRemoteData(){
   saveLocalCache();
   try{
-    await sb.from('site_data').upsert([
+    await adminWrite('site_data', 'upsert', [
       { key:'overrides', data: overrides, updated_at: new Date().toISOString() },
       { key:'categoryStore', data: categoryStore, updated_at: new Date().toISOString() }
     ]);
@@ -1133,7 +1159,7 @@ async function safePushRemoteData(){
   setAutosaveStatus(navigator.onLine ? 'saving' : 'offline');
   saveLocalCache();
   try{
-    await sb.from('site_data').upsert([
+    await adminWrite('site_data', 'upsert', [
       { key:'overrides', data: overrides, updated_at: new Date().toISOString() },
       { key:'categoryStore', data: categoryStore, updated_at: new Date().toISOString() }
     ]);
@@ -1517,13 +1543,14 @@ async function renderReviewList(){
 async function approveContribution(id){
   const { data: item, error: fetchErr } = await sb.from('pending_contributions').select('*').eq('id', id).single();
   if(fetchErr || !item){ alert('تعذر جلب المساهمة'); return; }
-  const { error: insErr } = await sb.from('course_media').insert({
-    course_code: item.course_code, type: item.type, title: item.title, url: item.url,
-    mime_type: item.mime_type, file_size: item.file_size, folder: item.folder,
-    tags: [], note: item.note || ''
-  });
-  if(insErr){ alert('تعذر نشر الملف: ' + insErr.message); return; }
-  await sb.from('pending_contributions').update({ status:'approved', reviewed_at: new Date().toISOString() }).eq('id', id);
+  try{
+    await adminWrite('course_media', 'insert', {
+      course_code: item.course_code, type: item.type, title: item.title, url: item.url,
+      mime_type: item.mime_type, file_size: item.file_size, folder: item.folder,
+      tags: [], note: item.note || ''
+    });
+    await adminWrite('pending_contributions', 'update', { status:'approved', reviewed_at: new Date().toISOString() }, { id });
+  }catch(e){ alert('تعذر نشر الملف: ' + e.message); return; }
   if(mediaCache && mediaCache[item.course_code]) delete mediaCache[item.course_code]; // يفرض إعادة تحميل الوسائط لهاد المساق
   renderReviewList();
   refreshPendingBadge();
@@ -1531,7 +1558,8 @@ async function approveContribution(id){
 
 async function rejectContribution(id){
   if(!confirm('ترفض هالمساهمة؟ رح تنحذف نهائيًا.')) return;
-  await sb.from('pending_contributions').update({ status:'rejected', reviewed_at: new Date().toISOString() }).eq('id', id);
+  try{ await adminWrite('pending_contributions', 'update', { status:'rejected', reviewed_at: new Date().toISOString() }, { id }); }
+  catch(e){ alert('تعذر الرفض: ' + e.message); return; }
   renderReviewList();
   refreshPendingBadge();
 }
@@ -1629,6 +1657,7 @@ async function submitAdminPassword(){
     sessionStorage.removeItem(LS_ADMIN_ATTEMPTS);
     isAdmin = true;
     sessionStorage.setItem(LS_ADMIN, '1');
+    sessionStorage.setItem(LS_ADMIN_PW, pw);
     applyAdminState();
     closeAdminModal();
     if(currentCourse) renderCoursePage(currentCourse);
@@ -1663,6 +1692,7 @@ adminPwToggle.addEventListener('click', ()=>{
 document.getElementById('adminLogout').addEventListener('click', ()=>{
   isAdmin = false;
   sessionStorage.removeItem(LS_ADMIN);
+  sessionStorage.removeItem(LS_ADMIN_PW);
   applyAdminState();
   if(currentCourse) renderCoursePage(currentCourse);
 });
@@ -2047,22 +2077,19 @@ initRemoteSync();
 async function restoreMediaSnapshot(m){
   if(m.kind === 'delete'){
     // كان محذوف — نرجّعه بإعادة إدراج نفس البيانات (الملف الأصلي بالتخزين لسّا موجود)
-    const { error } = await sb.from('course_media').insert({
+    await adminWrite('course_media', 'insert', {
       course_code: m.item.code, type: m.item.type, title: m.item.title,
       url: m.item.url, mime_type: m.item.mimeType, file_size: m.item.fileSize,
       tags: m.item.tags || [], note: m.item.note || ''
     });
-    if(error) throw error;
   } else if(m.kind === 'add'){
     // كان مضاف (رفع/رابط) — نتراجع بحذفه
-    const { error } = await sb.from('course_media').delete().eq('id', m.id);
-    if(error) throw error;
+    await adminWrite('course_media', 'delete', null, { id: m.id });
   } else if(m.kind === 'update'){
     // كان تعديل ملاحظة/وسوم — نرجّع القيم القديمة
-    const { error } = await sb.from('course_media').update({
+    await adminWrite('course_media', 'update', {
       note: m.before.note || '', tags: m.before.tags || [], updated_at: new Date().toISOString()
-    }).eq('id', m.id);
-    if(error) throw error;
+    }, { id: m.id });
   }
 }
 
@@ -2116,15 +2143,18 @@ function getFolderMeta(code, name){
 async function updateFolderMeta(code, name, patch){
   const current = getFolderMeta(code, name);
   const next = { note: 'note' in patch ? patch.note : current.note, tags: 'tags' in patch ? patch.tags : current.tags };
-  const { error } = await sb.from('course_media_folders')
-    .upsert({ course_code: code, name, note: next.note, tags: next.tags, updated_at: new Date().toISOString() }, { onConflict: 'course_code,name' });
-  if(error){ console.error('تعذر تحديث تفاصيل المجلد:', error.message); return; }
+  try{
+    await adminWrite('course_media_folders', 'upsert',
+      { course_code: code, name, note: next.note, tags: next.tags, updated_at: new Date().toISOString() },
+      null, { onConflict: 'course_code,name' });
+  }catch(e){ console.error('تعذر تحديث تفاصيل المجلد:', e.message); return; }
   folderMetaCache[code] = folderMetaCache[code] || {};
   folderMetaCache[code][name] = next;
 }
 
 async function deleteFolderMetaRow(code, name){
-  await sb.from('course_media_folders').delete().eq('course_code', code).eq('name', name);
+  try{ await adminWrite('course_media_folders', 'delete', null, { course_code: code, name }); }
+  catch(e){ console.error('تعذر حذف تفاصيل المجلد:', e.message); }
   if(folderMetaCache[code]) delete folderMetaCache[code][name];
 }
 
@@ -2211,12 +2241,12 @@ async function handleMediaFiles(code, fileList){
         });
       }, 6, 2000, (attempt)=>{ if(progressEl) progressEl.textContent = `مشكلة اتصال، إعادة محاولة رفع (${attempt}/6): ${file.name}`; });
       const { data: pub } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(path);
-      const { data: inserted, error: dbErr } = await withRetry(() => sb.from('course_media').insert({
+      const insertedRows = await withRetry(() => adminWrite('course_media', 'insert', {
         course_code: code, type: mediaDetectType(file.type), title: file.name,
         url: pub.publicUrl, mime_type: file.type, file_size: file.size,
         tags: [], note: ''
-      }).select().single(), 6, 2000);
-      if(dbErr) throw dbErr;
+      }), 6, 2000);
+      const inserted = insertedRows[0];
       pushHistorySnapshot('رفع ملف: ' + file.name, { media: { kind:'add', id: inserted.id, item: mapMediaRow(inserted) } });
       done++;
     }catch(e){
@@ -2237,10 +2267,11 @@ async function handleMediaFiles(code, fileList){
 async function addMediaLink(code, url){
   let title = url;
   try{ title = new URL(url).hostname; }catch(e){}
-  const { data: inserted, error } = await sb.from('course_media').insert({
-    course_code: code, type:'link', title, url, tags: [], note: ''
-  }).select().single();
-  if(error){ alert('تعذر إضافة الرابط: ' + error.message); return; }
+  let inserted;
+  try{
+    const rows = await adminWrite('course_media', 'insert', { course_code: code, type:'link', title, url, tags: [], note: '' });
+    inserted = rows[0];
+  }catch(e){ alert('تعذر إضافة الرابط: ' + e.message); return; }
   pushHistorySnapshot('إضافة رابط ميديا: ' + title, { media: { kind:'add', id: inserted.id, item: mapMediaRow(inserted) } });
   await loadMediaForCourse(code);
 }
@@ -2251,8 +2282,8 @@ async function updateMediaItem(id, patch, beforeItem){
   if('tags' in patch) dbPatch.tags = patch.tags;
   if('folder' in patch) dbPatch.folder = patch.folder;
   dbPatch.updated_at = new Date().toISOString();
-  const { error } = await sb.from('course_media').update(dbPatch).eq('id', id);
-  if(error){ console.error('تعذر تحديث العنصر:', error.message); return; }
+  try{ await adminWrite('course_media', 'update', dbPatch, { id }); }
+  catch(e){ console.error('تعذر تحديث العنصر:', e.message); return; }
   if(beforeItem){
     pushHistorySnapshot('تعديل بيانات ملف: ' + beforeItem.title, { media: { kind:'update', id, before: { note: beforeItem.note, tags: beforeItem.tags } } });
   }
@@ -2289,8 +2320,8 @@ async function bulkMoveMedia(code, ids, folder){
 
 async function bulkDeleteMedia(code, ids){
   const beforeItems = (mediaCache[code]||[]).filter(m=>ids.includes(m.id));
-  const { error } = await sb.from('course_media').delete().in('id', ids);
-  if(error){ alert('تعذر حذف العناصر المحددة: ' + error.message); return; }
+  try{ await adminWrite('course_media', 'delete', null, { id: ids }); }
+  catch(e){ alert('تعذر حذف العناصر المحددة: ' + e.message); return; }
   beforeItems.forEach(it=>{
     pushHistorySnapshot('حذف ملف: ' + it.title, { media: { kind:'delete', item: it } });
   });
@@ -2300,8 +2331,8 @@ async function bulkDeleteMedia(code, ids){
 
 async function deleteMediaItem(code, id){
   const beforeItem = (mediaCache[code]||[]).find(m=>m.id===id);
-  const { error } = await sb.from('course_media').delete().eq('id', id);
-  if(error){ alert('تعذر الحذف: ' + error.message); return; }
+  try{ await adminWrite('course_media', 'delete', null, { id }); }
+  catch(e){ alert('تعذر الحذف: ' + e.message); return; }
   if(beforeItem){
     pushHistorySnapshot('حذف ملف: ' + beforeItem.title, { media: { kind:'delete', item: beforeItem } });
   }
