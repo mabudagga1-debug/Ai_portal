@@ -961,20 +961,16 @@ const RESOURCES = {
 // ============= ADMIN / STORAGE =============
 // كلمة سر الأدمن ما عادت هون — التحقق صار عبر Supabase Edge Function "verify-admin" (شوف submitAdminPassword)
 const LS_KEY = "aiplan_overrides_v1";
-const LS_CATS_CACHE = "aiplan_categories_v1"; // كاش محلي فقط، المصدر الحقيقي هو jsonbin
+const LS_CATS_CACHE = "aiplan_categories_v1"; // كاش محلي فقط، المصدر الحقيقي هو Supabase
 const LS_ADMIN = "aiplan_admin_v1";
 
-// ---- تخزين مشترك عبر jsonbin.io: كل التعديلات تنحفظ هون وتظهر لكل زوار الموقع ----
-const JSONBIN_ID = "6a53bf98da38895dfe532b51";
-const JSONBIN_KEY = "$2a$10$fcFw8Ng9BVGu6YZLaduEfOskTah.t8m1C3A5X0AUeA6aq.hPGzvIO";
-const JSONBIN_URL = "https://api.jsonbin.io/v3/b/" + JSONBIN_ID;
-
+// ---- تخزين مشترك عبر Supabase (جدول site_data): كل التعديلات تنحفظ هون وتظهر لكل زوار الموقع ----
 let overrides = {};       // { "ECOM 1301": {"اسم الرابط": "url", ...}, ... }
 let categoryStore = {};   // { "ECOM 3303": { Exam:{label:url}, ... } }
 let isAdmin = sessionStorage.getItem(LS_ADMIN) === "1";
 let remoteReady = false;
 
-// كاش محلي سريع (يستعمل بس كـ fallback فوري لحد ما يوصل الرد من jsonbin)
+// كاش محلي سريع (يستعمل بس كـ fallback فوري لحد ما يوصل الرد من Supabase)
 function loadLocalCache(){
   try{ overrides = JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(e){ overrides = {}; }
   try{ categoryStore = JSON.parse(localStorage.getItem(LS_CATS_CACHE)) || {}; }catch(e){ categoryStore = {}; }
@@ -984,32 +980,30 @@ function saveLocalCache(){
   localStorage.setItem(LS_CATS_CACHE, JSON.stringify(categoryStore));
 }
 
-// يجيب آخر نسخة محفوظة من jsonbin (كل الزوار بيشوفوا نفس البيانات)
+// يجيب آخر نسخة محفوظة من Supabase (كل الزوار بيشوفوا نفس البيانات)
 async function fetchRemoteData(){
   try{
-    const res = await fetch(JSONBIN_URL + "/latest", {
-      headers: { "X-Master-Key": JSONBIN_KEY }
-    });
-    if(!res.ok) throw new Error('fetch failed: ' + res.status);
-    const json = await res.json();
-    return json.record || {};
+    const { data, error } = await sb.from('site_data').select('key,data');
+    if(error) throw error;
+    const rec = {};
+    (data||[]).forEach(row => { rec[row.key] = row.data; });
+    return { overrides: rec.overrides || {}, categoryStore: rec.categoryStore || {} };
   }catch(e){
-    console.error('تعذر جلب البيانات من jsonbin:', e);
+    console.error('تعذر جلب البيانات من Supabase:', e);
     return null;
   }
 }
 
-// يبعت آخر نسخة من overrides + categoryStore لـ jsonbin بحيث تظهر لكل الزوار
+// يبعت آخر نسخة من overrides + categoryStore لـ Supabase بحيث تظهر لكل الزوار
 async function pushRemoteData(){
   saveLocalCache();
   try{
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
-      body: JSON.stringify({ overrides, categoryStore })
-    });
+    await sb.from('site_data').upsert([
+      { key:'overrides', data: overrides, updated_at: new Date().toISOString() },
+      { key:'categoryStore', data: categoryStore, updated_at: new Date().toISOString() }
+    ]);
   }catch(e){
-    console.error('تعذر حفظ البيانات على jsonbin:', e);
+    console.error('تعذر حفظ البيانات على Supabase:', e);
     alert('تنبيه: صار خطأ بحفظ التعديل على السيرفر، التعديل محفوظ محلي بس وممكن ما يظهر لباقي الزوار.');
   }
 }
@@ -1139,14 +1133,13 @@ async function safePushRemoteData(){
   setAutosaveStatus(navigator.onLine ? 'saving' : 'offline');
   saveLocalCache();
   try{
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
-      body: JSON.stringify({ overrides, categoryStore })
-    });
+    await sb.from('site_data').upsert([
+      { key:'overrides', data: overrides, updated_at: new Date().toISOString() },
+      { key:'categoryStore', data: categoryStore, updated_at: new Date().toISOString() }
+    ]);
     setAutosaveStatus('saved');
   }catch(e){
-    console.error('تعذر حفظ البيانات على jsonbin:', e);
+    console.error('تعذر حفظ البيانات على Supabase:', e);
     setAutosaveStatus(navigator.onLine ? 'error' : 'offline');
   }finally{
     saveQueueBusy = false;
@@ -1171,7 +1164,7 @@ window.addEventListener('beforeunload', (e) => {
   }
 });
 
-// تحميل أولي: كاش محلي سريع، وبعدين مزامنة حقيقية مع jsonbin
+// تحميل أولي: كاش محلي سريع، وبعدين مزامنة حقيقية مع Supabase
 loadLocalCache();
 async function initRemoteSync(){
   const remote = await fetchRemoteData();
@@ -1749,7 +1742,7 @@ getCombinedResources = function(c){
 };
 
 // ============= COURSE DETAIL PAGE (صفحة مستقلة لكل مساق، رابط مباشر عبر الـ hash) =============
-// ملاحظة: categoryStore و saveCategoryStore معرّفين فوق ضمن قسم ADMIN / STORAGE (مزامنة jsonbin)
+// ملاحظة: categoryStore و saveCategoryStore معرّفين فوق ضمن قسم ADMIN / STORAGE (مزامنة Supabase)
 // { "ECOM 3303": { Exam:{label:url}, Report:{label:url}, Experiences:{label:url}, General:{label:url} } }
 
 const CATS_META = [];
@@ -2041,7 +2034,7 @@ document.getElementById('cpBody').addEventListener('click', (e)=>{
 
 handleHashRoute(); // يدعم فتح صفحة مساق مباشرة عبر رابط مثل: #course=ECOM%202403
 
-// مزامنة أولية مع jsonbin: بتجيب آخر نسخة من التعديلات وتعيد رسم الموقع فيها
+// مزامنة أولية مع Supabase: بتجيب آخر نسخة من التعديلات وتعيد رسم الموقع فيها
 initRemoteSync();
 
 // ============= MEDIA VAULT (لكل مساق) =============
